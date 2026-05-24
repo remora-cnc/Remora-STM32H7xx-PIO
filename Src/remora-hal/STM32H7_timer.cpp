@@ -43,7 +43,7 @@ void STM32H7_timer::configTimer()
     timer->EGR = TIM_EGR_UG;                                    // reinit the counter
     timer->DIER = TIM_DIER_UIE;                                 // enable update interrupts
 	
-	NVIC_SetPriority(irq, irqPriority);
+    NVIC_SetPriority(irq, irqPriority);
 }
 
 void STM32H7_timer::startTimer()

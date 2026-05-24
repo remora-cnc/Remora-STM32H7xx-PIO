@@ -1,5 +1,5 @@
 /*
-    Remora is a free, opensource LinuxCNC component and Programmable Realtime
+  Remora is a free, opensource LinuxCNC component and Programmable Realtime
 	Unit (PRU) firmware to implement a LinuxCNC based CNC controller.
 	Copyright (C) 2025 Scott Alford (scotta)
 
@@ -25,6 +25,7 @@
 #include <sys/errno.h>
 
 #include "remora-core/remora.h"
+#include "remora-core/modules/comms/commsHandler.h"
 #include "remora-hal/STM32H7_SPIComms.h"
 #include "remora-hal/STM32H7_timer.h"
 
@@ -49,6 +50,7 @@ extern "C" {
 
 int main(void)
 {
+
 #ifdef HAS_BOOTLOADER
     HAL_RCC_DeInit();
     HAL_DeInit();
@@ -59,8 +61,8 @@ int main(void)
     __enable_irq();
 #endif
 
-	MPU_Config();
 	HAL_Init();
+  //MPU_Config();
 	SystemClock_Config();
 	PeriphCommonClock_Config();
 
@@ -74,7 +76,6 @@ int main(void)
 	MX_SDMMC1_SD_Init();
 	MX_FATFS_Init();
 
-  //auto comms = std::make_unique<STM32H7_SPIComms>(&rxData, &txData, SPI1);
   auto comms = std::make_unique<STM32H7_SPIComms>(&rxData, &txData, SPI_MOSI, SPI_MISO, SPI_CLK, SPI_CS);
 	auto commsHandler = std::make_shared<CommsHandler>();
 	commsHandler->setInterface(std::move(comms));
@@ -105,7 +106,7 @@ void SystemClock_Config(void)
   /** Supply configuration update enable
   */
   HAL_PWREx_ConfigSupply(PWR_LDO_SUPPLY);
-
+ 
   /** Configure the main internal regulator output voltage
   */
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);

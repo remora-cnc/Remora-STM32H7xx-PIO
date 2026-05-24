@@ -7,6 +7,8 @@
 #include <memory>
 #include <algorithm>
 
+#include "peripheralPins.h"
+#include "PinNamesTypes.h"
 #include "../remora-core/remora.h"
 #include "../remora-core/comms/commsInterface.h"
 #include "../remora-core/modules/moduleInterrupt.h"
