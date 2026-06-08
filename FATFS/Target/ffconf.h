@@ -24,7 +24,11 @@
 /-----------------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32h7xx_hal.h"
-#include "bsp_driver_sd.h"
+#ifdef SD_SPI
+  #include "../SPI/bsp_driver_sd_spi.h"
+#else
+  #include "../SDIO/bsp_driver_sd.h"
+#endif
 
 /*-----------------------------------------------------------------------------/
 / Function Configurations

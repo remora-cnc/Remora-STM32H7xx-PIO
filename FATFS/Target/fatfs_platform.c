@@ -18,15 +18,19 @@
 /* USER CODE END Header */
 #include "fatfs_platform.h"
 
-uint8_t	BSP_PlatformIsDetected(void) {
+
+uint8_t BSP_PlatformIsDetected(void) {
+#ifdef SD_SPI
+    /* No card-detect pin on SPI (EXP2) — assume card is present.
+        * BSP_SD_Init() will return MSD_ERROR if the card is actually
+        * absent, which is caught by SD_SPI_initialize() in sd_spi_diskio.c */
+    return SD_PRESENT;
+#else
     uint8_t status = SD_PRESENT;
-    /* Check SD card detect pin */
     if(HAL_GPIO_ReadPin(SD_DETECT_GPIO_PORT, SD_DETECT_PIN) != GPIO_PIN_RESET)
     {
         status = SD_NOT_PRESENT;
     }
-    /* USER CODE BEGIN 1 */
-    /* user code can be inserted here */
-    /* USER CODE END 1 */
     return status;
+#endif
 }
