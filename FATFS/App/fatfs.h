@@ -25,7 +25,12 @@
 
 #include "ff.h"
 #include "ff_gen_drv.h"
-#include "sd_diskio.h" /* defines SD_Driver as external */
+
+#ifdef SD_SPI
+  #include "sd_spi_diskio.h" /* defines SD_Driver as external */
+#else
+  #include "sd_diskio.h"     /* SDIO/SDMMC DMA driver */
+#endif
 
 /* USER CODE BEGIN Includes */
 

@@ -29,15 +29,21 @@
 #include "remora-hal/STM32H7_SPIComms.h"
 #include "remora-hal/STM32H7_timer.h"
 
+
+
 SD_HandleTypeDef hsd1;
 UART_HandleTypeDef huart1;
 
 void SystemClock_Config(void);
 void PeriphCommonClock_Config(void);
 static void MPU_Config(void);
-static void MX_GPIO_Init(void);
 static void MX_USART1_UART_Init(void);
-static void MX_SDMMC1_SD_Init(void);
+#ifdef SD_SPI
+  #include "remora-hal/STM32H7_SPI_SDcard.h"
+#else
+  static void MX_GPIO_Init(void);
+  static void MX_SDMMC1_SD_Init(void);
+#endif
 
 // re-target printf to UART1 by redeclaring week function in syscalls.c
 extern "C" {
@@ -73,8 +79,14 @@ int main(void)
   __HAL_RCC_DMA1_CLK_ENABLE();
 
 	MX_USART1_UART_Init();
-	MX_SDMMC1_SD_Init();
-	MX_FATFS_Init();
+
+#ifdef SD_SPI
+  auto sdCard = std::make_unique<STM32H7_SPI_SDcard>(SD_MOSI, SD_MISO, SD_CLK, SD_CS);
+  sdCard->init();
+#else
+  MX_SDMMC1_SD_Init();
+  MX_FATFS_Init();
+#endif
 
   auto comms = std::make_unique<STM32H7_SPIComms>(&rxData, &txData, SPI_MOSI, SPI_MISO, SPI_CLK, SPI_CS);
 	auto commsHandler = std::make_shared<CommsHandler>();
