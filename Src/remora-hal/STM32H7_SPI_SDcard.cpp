@@ -117,15 +117,7 @@ bool STM32H7_SPI_SDcard::init()
 
     MX_FATFS_Init();
 
-    FRESULT fr = f_mount(&SDFatFS, SDPath, 1);
-    if (fr != FR_OK)
-    {
-        printf("STM32H7_SPI_SDcard: f_mount FAILED (FRESULT=%d)\r\n", (int)fr);
-        return false;
-    }
-
-    _mounted = true;
-    printf("STM32H7_SPI_SDcard: SD card mounted OK\r\n");
+    printf("STM32H7_SPI_SDcard: SD card ready\r\n");
     return true;
 }
 

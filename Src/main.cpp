@@ -28,11 +28,8 @@
 #include "remora-core/modules/comms/commsHandler.h"
 #include "remora-hal/STM32H7_SPIComms.h"
 #include "remora-hal/STM32H7_timer.h"
+#include "remora-hal/STM32H7_UART.h"
 
-
-
-SD_HandleTypeDef hsd1;
-UART_HandleTypeDef huart1;
 
 void SystemClock_Config(void);
 void PeriphCommonClock_Config(void);
@@ -41,17 +38,18 @@ static void MX_USART1_UART_Init(void);
 #ifdef SD_SPI
   #include "remora-hal/STM32H7_SPI_SDcard.h"
 #else
+  #include "remora-hal/STM32H7_SDIO.h"
   static void MX_GPIO_Init(void);
   static void MX_SDMMC1_SD_Init(void);
 #endif
 
-// re-target printf to UART1 by redeclaring week function in syscalls.c
+// printf retargeting — uses g_uart set during STM32H7_UART construction
 extern "C" {
-	int __io_putchar(int ch)
-	{
-	  HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xFFFF);
-	  return ch;
-	}
+    int __io_putchar(int ch)
+    {
+        if (g_uart) g_uart->putChar((uint8_t)ch);
+        return ch;
+    }
 }
 
 int main(void)
@@ -78,14 +76,15 @@ int main(void)
 
   __HAL_RCC_DMA1_CLK_ENABLE();
 
-	MX_USART1_UART_Init();
+  auto uart = std::make_unique<STM32H7_UART>(REMORA_UART_TX, REMORA_UART_RX);
+  uart->init();
 
 #ifdef SD_SPI
   auto sdCard = std::make_unique<STM32H7_SPI_SDcard>(SD_MOSI, SD_MISO, SD_CLK, SD_CS);
   sdCard->init();
 #else
-  MX_SDMMC1_SD_Init();
-  MX_FATFS_Init();
+  auto sdCard = std::make_unique<STM32H7_SDIO>(REMORA_SD_CMD, REMORA_SD_CLK, REMORA_SD_D0, REMORA_SD_D1, REMORA_SD_D2, REMORA_SD_D3);
+  sdCard->init();
 #endif
 
   auto comms = std::make_unique<STM32H7_SPIComms>(&rxData, &txData, SPI_MOSI, SPI_MISO, SPI_CLK, SPI_CS);
@@ -198,85 +197,6 @@ void PeriphCommonClock_Config(void)
   {
     Error_Handler();
   }
-}
-
-
-/**
-  * @brief SDMMC1 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_SDMMC1_SD_Init(void)
-{
-
-  /* USER CODE BEGIN SDMMC1_Init 0 */
-
-  /* USER CODE END SDMMC1_Init 0 */
-
-  /* USER CODE BEGIN SDMMC1_Init 1 */
-
-  /* USER CODE END SDMMC1_Init 1 */
-  hsd1.Instance = SDMMC1;
-  hsd1.Init.ClockEdge = SDMMC_CLOCK_EDGE_RISING;
-  hsd1.Init.ClockPowerSave = SDMMC_CLOCK_POWER_SAVE_ENABLE;
-  hsd1.Init.BusWide = SDMMC_BUS_WIDE_4B;
-  hsd1.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE;
-  hsd1.Init.ClockDiv = 8;
-  /* USER CODE BEGIN SDMMC1_Init 2 */
-  if (HAL_SD_Init(&hsd1) != HAL_OK)
-  {
-      printf("SD_Init error\n");
-  }
-  /* USER CODE END SDMMC1_Init 2 */
-
-}
-
-/**
-  * @brief USART1 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_USART1_UART_Init(void)
-{
-
-  /* USER CODE BEGIN USART1_Init 0 */
-
-  /* USER CODE END USART1_Init 0 */
-
-  /* USER CODE BEGIN USART1_Init 1 */
-
-  /* USER CODE END USART1_Init 1 */
-  huart1.Instance = USART1;
-  huart1.Init.BaudRate = Config::pcBaud;
-  huart1.Init.WordLength = UART_WORDLENGTH_8B;
-  huart1.Init.StopBits = UART_STOPBITS_1;
-  huart1.Init.Parity = UART_PARITY_NONE;
-  huart1.Init.Mode = UART_MODE_TX_RX;
-  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
-  huart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  huart1.Init.ClockPrescaler = UART_PRESCALER_DIV1;
-  huart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_UART_Init(&huart1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_UARTEx_SetTxFifoThreshold(&huart1, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_UARTEx_SetRxFifoThreshold(&huart1, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_UARTEx_DisableFifoMode(&huart1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN USART1_Init 2 */
-
-  /* USER CODE END USART1_Init 2 */
-
 }
 
 /* USER CODE BEGIN 4 */
